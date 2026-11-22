@@ -74,6 +74,15 @@
             justify-content: space-between;
         }
 
+
+        /* Ô cho phép sửa trực tiếp trên mẫu in (chỉ tô nền khi xem trên màn hình) */
+        .edit-field[contenteditable="true"] { background: #fffbe6; outline: none; cursor: text; min-width: 40px; }
+        .edit-field[contenteditable="true"]:hover { background: #fef3c7; }
+        .edit-field[contenteditable="true"]:focus { background: #fde68a; box-shadow: 0 0 0 1px #ca8a04; }
+        @media print {
+            .edit-field { background: transparent !important; box-shadow: none !important; }
+        }
+
         .dotted-line {
             border-bottom: 1px dotted #000000;
             display: inline-block;
@@ -963,7 +972,7 @@
                                 </div>
                                 <div style="display: flex; align-items: baseline;">
                                     <span style="white-space: nowrap;">Số Tiền:</span>
-                                    <strong id="prt-sotien" class="dotted-line" style="flex-grow: 1; margin-left: 4px; text-align: center; font-size: 12pt;"></strong>
+                                    <strong id="prt-sotien" class="dotted-line edit-field" contenteditable="true" data-edit="prt-sotien" spellcheck="false" style="flex-grow: 1; margin-left: 4px; text-align: center; font-size: 12pt;"></strong>
                                 </div>
                             </div>
 
@@ -971,19 +980,19 @@
                             <div style="width: 52%; line-height: 1.42;">
                                 <div id="prt-row-ct1" style="display: flex; align-items: baseline;">
                                     <span style="white-space: nowrap;">Tên:</span>
-                                    <strong id="prt-tents" class="dotted-line" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
+                                    <strong id="prt-tents" class="dotted-line edit-field" contenteditable="true" data-edit="prt-tents" spellcheck="false" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
                                 </div>
                                 <div id="prt-row-ct2" style="display: flex; align-items: baseline; margin-top: 4px;">
                                     <span id="prt-lbl-ct2" style="white-space: nowrap;">Mật khẩu:</span>
-                                    <strong id="prt-ct2" class="dotted-line" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
+                                    <strong id="prt-ct2" class="dotted-line edit-field" contenteditable="true" data-edit="prt-ct2" spellcheck="false" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
                                 </div>
                                 <div id="prt-row-ct3" style="display: flex; align-items: baseline; margin-top: 4px;">
                                     <span id="prt-lbl-ct3" style="white-space: nowrap;">Imel:</span>
-                                    <strong id="prt-ct3" class="dotted-line" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
+                                    <strong id="prt-ct3" class="dotted-line edit-field" contenteditable="true" data-edit="prt-ct3" spellcheck="false" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
                                 </div>
                                 <div id="prt-row-ct4" style="display: none; align-items: baseline; margin-top: 4px;">
                                     <span id="prt-lbl-ct4" style="white-space: nowrap;">Số khung:</span>
-                                    <strong id="prt-ct4" class="dotted-line" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
+                                    <strong id="prt-ct4" class="dotted-line edit-field" contenteditable="true" data-edit="prt-ct4" spellcheck="false" style="flex-grow: 1; margin-left: 4px; text-align: center;"></strong>
                                 </div>
                             </div>
                         </div>
@@ -2953,6 +2962,7 @@
             updateBadgesAndStats();
             initTaoPhieuForm();
             initPatternPadEvents();
+            initPrintEditableFields();
             populatePrintDropdown();
         }
 
@@ -5682,6 +5692,7 @@
                 const clone = sourceSheet.cloneNode(true);
                 clone.removeAttribute('id');
                 clone.querySelectorAll('[id]').forEach(el => el.removeAttribute('id'));
+                clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
                 batchContainer.appendChild(clone);
             }
         }
@@ -5690,7 +5701,12 @@
             const textInput = document.getElementById('input-print-contract');
             const hiddenInput = document.getElementById('select-print-contract');
 
-            if (textInput) {
+            const curSelIdx = Number(hiddenInput ? hiddenInput.value : -1);
+            const textMatchesCurrent = !!(textInput && curSelIdx >= 0 && contracts[curSelIdx] &&
+                textInput.value.trim() === formatContractOptionLabel(contracts[curSelIdx]));
+
+            // Nếu ô chọn vẫn đang trỏ đúng hợp đồng hiện tại thì KHÔNG nạp lại mẫu in (để giữ nội dung đã sửa)
+            if (textInput && !textMatchesCurrent) {
                 const isValid = handlePrintContractInput(textInput.value, false);
                 if (!isValid) {
                     const errorEl = document.getElementById('print-contract-error');
@@ -5714,8 +5730,81 @@
                 showToast('Hợp đồng thiếu thông tin bắt buộc (Tên KH, SĐT, Tên TS hoặc Số tiền)!', 'error');
                 return;
             }
+            // Áp dụng thông tin tài sản đã sửa trên mẫu in (chỉ khi in) vào hợp đồng
+            if (!applyPrintEditsToContract(idx)) return;
+
             prepareTwoCopiesForPrint();
             window.print();
+        }
+
+        // ---- Sửa thông tin tài sản ngay trên mẫu in ----
+        function readEditableText(id) {
+            const el = document.getElementById(id);
+            return el ? el.textContent.replace(/\s+/g, ' ').trim() : '';
+        }
+
+        function handlePrintMoneyEdit(el) {
+            const raw = parseNumber(el.textContent);
+            const bc = document.getElementById('prt-bangchu');
+            if (bc) bc.textContent = raw > 0 ? docSoTienTiengViet(raw) : '';
+        }
+
+        function initPrintEditableFields() {
+            document.querySelectorAll('#print-section .edit-field').forEach(el => {
+                el.addEventListener('keydown', e => {
+                    if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+                });
+                el.addEventListener('paste', e => {
+                    e.preventDefault();
+                    const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\s+/g, ' ');
+                    document.execCommand('insertText', false, text);
+                });
+                if (el.id === 'prt-sotien') {
+                    el.addEventListener('input', () => handlePrintMoneyEdit(el));
+                    el.addEventListener('blur', () => {
+                        const raw = parseNumber(el.textContent);
+                        el.textContent = raw > 0 ? formatNumber(raw) : '';
+                        handlePrintMoneyEdit(el);
+                    });
+                }
+            });
+        }
+
+        function applyPrintEditsToContract(idx) {
+            const c = contracts[idx];
+            if (!c) return false;
+
+            const loaiKey = (c.loaits && ASSET_CONFIG[c.loaits]) ? c.loaits : (MATS_TO_LOAI[c.mats] || 'XE MAY');
+            const cfg = ASSET_CONFIG[loaiKey] || ASSET_CONFIG['XE MAY'];
+
+            const tents = readEditableText('prt-tents');
+            const ct2 = readEditableText('prt-ct2');
+            const ct3 = readEditableText('prt-ct3');
+            const ct4 = cfg.showCt4 ? readEditableText('prt-ct4') : (c.ct4 || '');
+            const sotien = parseNumber(readEditableText('prt-sotien'));
+
+            if (!tents || sotien <= 0) {
+                showToast('Tên tài sản và Số tiền không được để trống!', 'error');
+                return false;
+            }
+
+            const changed = tents !== (c.tents || '') || ct2 !== (c.ct2 || '') ||
+                ct3 !== (c.ct3 || '') || ct4 !== (c.ct4 || '') || sotien !== Number(c.sotien);
+
+            if (changed) {
+                contracts[idx] = { ...c, tents, ct2, ct3, ct4, sotien };
+                saveDataToStorage();
+                updateBadgesAndStats();
+                renderContractsTable();
+                if (selectedEditIndex === idx) selectContractForEdit(idx);
+                showToast(`Đã cập nhật thông tin tài sản vào hợp đồng ${c.mahd}!`, 'success');
+            }
+
+            // Vẽ lại mẫu in từ dữ liệu chuẩn (số tiền, bằng chữ đã đồng bộ)
+            loadContractToPrint(idx);
+            const textInput = document.getElementById('input-print-contract');
+            if (textInput) textInput.value = formatContractOptionLabel(contracts[idx]);
+            return true;
         }
 
         function handleZaloQRUpload(event) {
