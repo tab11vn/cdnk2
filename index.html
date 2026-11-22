@@ -207,26 +207,26 @@
                 <nav class="flex flex-wrap items-center gap-2 bg-navy-800 p-1.5 rounded-xl border border-navy-700">
                     <button type="button" onclick="switchTab('tab-taophieu')" id="btn-tab-taophieu" class="tab-btn active px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-gold-500 text-navy-950 shadow">
                         <i class="fa-solid fa-file-signature"></i>
-                        <span>Tạo Phiếu Cầm Đồ</span>
+                        <span>Tạo Phiếu</span>
                     </button>
                     <button type="button" onclick="switchTab('tab-dskh')" id="btn-tab-dskh" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white hover:bg-navy-700">
                         <i class="fa-solid fa-list-check"></i>
-                        <span>Danh Sách Hợp Đồng</span>
+                        <span>Danh Sách HĐ</span>
                         <span id="badge-count" class="bg-navy-950 text-gold-400 text-xs px-2 py-0.5 rounded-full">0</span>
                     </button>
                     <button type="button" onclick="switchTab('tab-khcu')" id="btn-tab-khcu" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white hover:bg-navy-700">
                         <i class="fa-solid fa-users"></i>
-                        <span>Khách Hàng Cũ</span>
+                        <span>DS Khách hàng</span>
                         <span id="badge-kh-nav" class="bg-navy-950 text-gold-400 text-xs px-2 py-0.5 rounded-full">0</span>
                     </button>
                     <button type="button" onclick="switchTab('tab-mauin')" id="btn-tab-mauin" class="tab-btn px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 text-slate-300 hover:text-white hover:bg-navy-700">
                         <i class="fa-solid fa-print"></i>
-                        <span>Mẫu In Hợp Đồng (A5)</span>
+                        <span>Mẫu In (A5)</span>
                     </button>
                     <div class="h-6 w-px bg-navy-600 mx-0.5 hidden sm:block"></div>
                     <button type="button" onclick="reloadAppPage()" id="btn-reload-page" title="Tải lại trang để cập nhật dữ liệu và thay đổi mới nhất" class="px-3.5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-60 text-white shadow cursor-pointer">
                         <i id="icon-reload-page" class="fa-solid fa-rotate"></i>
-                        <span id="text-reload-page">Tải Lại Trang</span>
+                        <span id="text-reload-page">reset</span>
                     </button>
                 </nav>
             </div>
@@ -324,7 +324,7 @@
                         <div class="bg-navy-900 text-white px-4 py-3">
                             <h2 class="font-semibold text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-id-card text-gold-400"></i>
-                                <span>HÌNH ẢNH CCCD / CMND</span>
+                                <span>HÌNH ẢNH CCCD</span>
                             </h2>
                         </div>
                         <div class="p-4 space-y-4">
@@ -893,10 +893,10 @@
                         <div>Bên Cầm Đồ: <strong style="font-size: 10.5pt;">CẦM ĐỒ NAM KỲ 2</strong></div>
                         <div style="font-size: 9.5pt; margin-top: 2px;"><strong>Địa chỉ:</strong> số 174, đường 2/9, khu phố An Phước 2, phường Bến Cát, TP. Hồ Chí Minh</div>
                     </div>
-
                     <!-- THÔNG TIN KHÁCH HÀNG -->
                     <div style="line-height: 1.45;">
                         <!-- Dòng 1: Khách hàng & Điện thoại -->
+                         <strong style="font-size: 9.5pt;">THÔNG TIN KHÁCH CẦM</strong>
                         <div style="display: flex; justify-content: space-between; gap: 6px;">
                             <div style="width: 62%; display: flex; align-items: baseline;">
                                 <span style="white-space: nowrap;">Khách hàng:</span>
