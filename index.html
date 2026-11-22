@@ -119,8 +119,25 @@
                 background: #ffffff !important;
                 overflow: visible !important;
             }
-            body > *:not(#print-batch-container) {
+            body > *:not(#print-batch-container):not(#print-cccd-container) {
                 display: none !important;
+            }
+            #print-cccd-container { display: none !important; }
+            body.printing-cccd #print-batch-container { display: none !important; }
+            body.printing-cccd #print-cccd-container {
+                display: block !important;
+                width: 128mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+            }
+            #print-cccd-container .cccd-print-img {
+                display: block !important;
+                width: 54mm !important;
+                height: auto !important;
+                margin: 0 0 4mm 0 !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
             }
             #print-batch-container {
                 display: block !important;
@@ -330,11 +347,14 @@
 
                     <!-- Box Ảnh CCCD Mặt trước / Mặt sau (Image3 & Image4) -->
                     <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                        <div class="bg-navy-900 text-white px-4 py-3">
+                        <div class="bg-navy-900 text-white px-4 py-3 flex items-center justify-between gap-2">
                             <h2 class="font-semibold text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-id-card text-gold-400"></i>
                                 <span>HÌNH ẢNH CCCD</span>
                             </h2>
+                            <button type="button" onclick="printCCCDImages()" title="In 2 mặt CCCD trên giấy A5 dọc, lề 1cm" class="text-xs bg-gold-500 hover:bg-gold-600 text-navy-950 font-bold px-3 py-1 rounded transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-print"></i> IN CCCD
+                            </button>
                         </div>
                         <div class="p-4 space-y-4">
                             <!-- Mặt trước -->
@@ -5695,6 +5715,74 @@
                 clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
                 batchContainer.appendChild(clone);
             }
+        }
+
+        // ---- In ảnh CCCD: A5 dọc, lề 1cm, 2 mặt xếp dọc (xoay ngang -> dọc như mẫu) ----
+        function rotateImageCCW(dataUrl) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.height;
+                    canvas.height = img.width;
+                    const ctx = canvas.getContext('2d');
+                    ctx.translate(0, canvas.height);
+                    ctx.rotate(-Math.PI / 2);
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg', 0.92));
+                };
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+        }
+
+        async function printCCCDImages() {
+            const sources = [currentCCCDImages.front, currentCCCDImages.back].filter(Boolean);
+            if (sources.length === 0) {
+                showToast('Chưa có ảnh CCCD để in! Hãy tải ảnh mặt trước / mặt sau lên.', 'warning');
+                return;
+            }
+
+            let rotated;
+            try {
+                rotated = await Promise.all(sources.map(rotateImageCCW));
+            } catch (err) {
+                showToast('Không xử lý được ảnh CCCD để in!', 'error');
+                return;
+            }
+
+            let container = document.getElementById('print-cccd-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'print-cccd-container';
+                container.style.display = 'none';
+                document.body.appendChild(container);
+            }
+            container.innerHTML = '';
+            rotated.forEach(src => {
+                const im = document.createElement('img');
+                im.src = src;
+                im.className = 'cccd-print-img';
+                container.appendChild(im);
+            });
+
+            // Khổ A5 dọc, lề 1cm (ghi đè @page của mẫu hợp đồng chỉ trong lúc in CCCD)
+            const pageStyle = document.createElement('style');
+            pageStyle.id = 'cccd-page-style';
+            pageStyle.textContent = '@page { size: A5 portrait; margin: 10mm; }';
+            document.head.appendChild(pageStyle);
+            document.body.classList.add('printing-cccd');
+
+            const cleanup = () => {
+                document.body.classList.remove('printing-cccd');
+                const st = document.getElementById('cccd-page-style');
+                if (st) st.remove();
+                container.innerHTML = '';
+                window.removeEventListener('afterprint', cleanup);
+            };
+            window.addEventListener('afterprint', cleanup);
+
+            setTimeout(() => window.print(), 200);
         }
 
         function triggerContractPrint() {
