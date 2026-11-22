@@ -1850,7 +1850,10 @@
                         <span class="text-xs font-bold uppercase text-sky-300 flex items-center gap-1.5">
                             <i class="fa-solid fa-list-ul"></i> Danh Sách Tài Sản Cầm Trong Khoảng Ngày Chọn
                         </span>
-                        <span id="pawn-date-list-badge" class="text-[11px] text-slate-300">0 hợp đồng</span>
+                        <span class="flex items-center gap-2">
+                            <button type="button" id="btn-clear-pawn-codes" onclick="clearPawnAssetCodes()" class="hidden px-2 py-0.5 rounded bg-slate-600 hover:bg-slate-500 text-white text-[10px] font-semibold transition">Bỏ chọn loại TS</button>
+                            <span id="pawn-date-list-badge" class="text-[11px] text-slate-300">0 hợp đồng</span>
+                        </span>
                     </div>
                     <div class="overflow-x-auto max-h-60">
                         <table class="w-full text-left border-collapse whitespace-nowrap text-xs">
@@ -4997,6 +5000,39 @@
                 });
         }
 
+        // Các mã tài sản đang được tích chọn để lọc Danh Sách Tài Sản Cầm (rỗng = hiển thị tất cả)
+        let pawnSelectedCodes = new Set();
+
+        function getContractAssetCode(c) {
+            let code = String(c.mats || '').toUpperCase().trim();
+            if (!['PT', 'DT', 'IP', 'LT', 'GT'].includes(code)) {
+                const loai = String(c.loaits || '').toUpperCase().trim();
+                if (loai === 'XE MAY') code = 'PT';
+                else if (loai === 'DIEN THOAI') code = 'DT';
+                else if (loai === 'IPHONE') code = 'IP';
+                else if (loai === 'LAPTOP') code = 'LT';
+                else if (loai === 'GIAY TO' || loai === 'B3') code = 'GT';
+            }
+            return code;
+        }
+
+        function getPawnDetailList() {
+            const list = getContractsFilteredByPawnDate();
+            if (pawnSelectedCodes.size === 0) return list;
+            return list.filter(c => pawnSelectedCodes.has(getContractAssetCode(c)));
+        }
+
+        function togglePawnAssetCode(code) {
+            if (pawnSelectedCodes.has(code)) pawnSelectedCodes.delete(code);
+            else pawnSelectedCodes.add(code);
+            updatePawnByDateStats();
+        }
+
+        function clearPawnAssetCodes() {
+            pawnSelectedCodes.clear();
+            updatePawnByDateStats();
+        }
+
         function updatePawnByDateStats() {
             const fromEl = document.getElementById('pawn-date-from');
             const toEl = document.getElementById('pawn-date-to');
@@ -5048,7 +5084,14 @@
             if (totalMoneyEl) totalMoneyEl.textContent = formattedTotal;
             if (footerCountEl) footerCountEl.textContent = filtered.length;
             if (footerTotalEl) footerTotalEl.textContent = formattedTotal;
-            if (listBadgeEl) listBadgeEl.textContent = `${filtered.length} hợp đồng`;
+            const detailList = getPawnDetailList();
+            if (listBadgeEl) {
+                listBadgeEl.textContent = pawnSelectedCodes.size > 0
+                    ? `${detailList.length} hợp đồng (lọc: ${[...pawnSelectedCodes].join(', ')})`
+                    : `${detailList.length} hợp đồng`;
+            }
+            const btnClearCodes = document.getElementById('btn-clear-pawn-codes');
+            if (btnClearCodes) btnClearCodes.classList.toggle('hidden', pawnSelectedCodes.size === 0);
 
             if (rangeLabelEl) {
                 if (fromVal && toVal) {
@@ -5067,10 +5110,12 @@
             if (groupTbody) {
                 groupTbody.innerHTML = Object.entries(groups).map(([code, g]) => {
                     const pct = totalMoney > 0 ? Math.round((g.money / totalMoney) * 100) : 0;
+                    const isSel = pawnSelectedCodes.has(code);
                     return `
-                        <tr class="hover:bg-sky-50/70 transition">
+                        <tr onclick="togglePawnAssetCode('${code}')" class="cursor-pointer transition ${isSel ? 'bg-sky-100/80' : 'hover:bg-sky-50/70'}" title="Tích chọn để lọc danh sách bên dưới">
                             <td class="py-2.5 px-4">
                                 <div class="flex items-center gap-2.5">
+                                    <input type="checkbox" ${isSel ? 'checked' : ''} onclick="event.stopPropagation()" onchange="togglePawnAssetCode('${code}')" class="w-4 h-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer shrink-0">
                                     <span class="w-7 h-7 rounded-lg bg-navy-900 text-sky-400 flex items-center justify-center text-xs shrink-0">
                                         <i class="${g.icon}"></i>
                                     </span>
@@ -5104,10 +5149,10 @@
             // Render bảng chi tiết hợp đồng trong khoảng ngày
             const detailTbody = document.getElementById('pawn-date-detail-tbody');
             if (detailTbody) {
-                if (filtered.length === 0) {
-                    detailTbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">Không có tài sản nào được cầm trong khoảng ngày đã chọn</td></tr>`;
+                if (detailList.length === 0) {
+                    detailTbody.innerHTML = `<tr><td colspan="7" class="py-6 text-center text-slate-400">Không có tài sản nào được cầm trong khoảng ngày / loại tài sản đã chọn</td></tr>`;
                 } else {
-                    detailTbody.innerHTML = filtered.map(c => `
+                    detailTbody.innerHTML = detailList.map(c => `
                         <tr class="hover:bg-sky-50/70 transition">
                             <td class="py-2 px-3 font-semibold text-sky-800">${formatDateVN(c.ngaycam)}</td>
                             <td class="py-2 px-3 font-bold text-navy-900">${c.mahd}</td>
@@ -5154,6 +5199,7 @@
         }
 
         function openPawnByDateModal() {
+            pawnSelectedCodes.clear();
             const fromEl = document.getElementById('pawn-date-from');
             const toEl = document.getElementById('pawn-date-to');
             if (fromEl && !fromEl.value && toEl && !toEl.value) {
@@ -5172,9 +5218,9 @@
         }
 
         function exportPawnByDateCSV() {
-            const filtered = getContractsFilteredByPawnDate();
+            const filtered = getPawnDetailList();
             if (filtered.length === 0) {
-                showToast('Không có dữ liệu trong khoảng ngày đã chọn để xuất CSV!', 'warning');
+                showToast('Không có dữ liệu trong khoảng ngày / loại tài sản đã chọn để xuất CSV!', 'warning');
                 return;
             }
             const fromVal = (document.getElementById('pawn-date-from')?.value || '').trim() || 'tat-ca';
