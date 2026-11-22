@@ -184,8 +184,18 @@
             <div class="flex flex-col md:flex-row justify-between items-center py-3 gap-3">
                 <!-- Logo & Thương hiệu -->
                 <div class="flex items-center gap-3">
-                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-950 font-bold text-xl shadow-md">
-                        <i class="fa-solid fa-scale-balanced"></i>
+                    <div class="relative group shrink-0">
+                        <label for="upload-app-logo" title="Bấm để đổi ảnh logo" class="block w-11 h-11 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center text-navy-950 font-bold text-xl shadow-md overflow-hidden cursor-pointer">
+                            <img id="app-logo-img" src="" alt="Logo" class="hidden w-full h-full object-contain bg-white">
+                            <i id="app-logo-default" class="fa-solid fa-scale-balanced"></i>
+                            <span class="absolute inset-0 bg-black/55 text-white text-sm flex items-center justify-center opacity-0 group-hover:opacity-100 transition rounded-xl">
+                                <i class="fa-solid fa-camera"></i>
+                            </span>
+                        </label>
+                        <input type="file" id="upload-app-logo" accept="image/*" class="hidden" onchange="handleAppLogoUpload(event)">
+                        <button type="button" id="btn-reset-app-logo" onclick="resetAppLogo()" title="Xóa logo, dùng biểu tượng mặc định" class="hidden absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-600 hover:bg-red-700 text-white text-[8px] items-center justify-center shadow group-hover:flex">
+                            <i class="fa-solid fa-xmark"></i>
+                        </button>
                     </div>
                     <div>
                         <h1 class="font-serif text-xl sm:text-2xl font-bold tracking-wider text-gold-400">CẦM ĐỒ NAM KỲ</h1>
@@ -2375,6 +2385,7 @@
             queue: Promise.resolve(),
             channel: null,
             zaloQR: '',
+            appLogo: '',
             refreshTimer: null
         };
         let sb = null;
@@ -2440,6 +2451,7 @@
                 } catch (e) { deletedContracts = []; }
             }
             cloud.zaloQR = (st.zalo_qr && st.zalo_qr.dataUrl) || '';
+            cloud.appLogo = (st.app_logo && st.app_logo.dataUrl) || '';
             normalizeCounters();
             rebuildSnapshot();
         }
@@ -2635,6 +2647,9 @@
                     } else if (row.key === 'zalo_qr' && row.value && row.value.dataUrl) {
                         cloud.zaloQR = row.value.dataUrl;
                         loadSavedZaloQR();
+                    } else if (row.key === 'app_logo' && row.value) {
+                        cloud.appLogo = row.value.dataUrl || '';
+                        applyAppLogo();
                     }
                     return;
                 }
@@ -2845,12 +2860,93 @@
             if (error) throw error;
         }
 
+        // ---- Logo thương hiệu trên thanh menu (có thể đổi ảnh, lưu dùng chung các máy) ----
+        function applyAppLogo() {
+            const img = document.getElementById('app-logo-img');
+            const def = document.getElementById('app-logo-default');
+            const btnReset = document.getElementById('btn-reset-app-logo');
+            if (!img || !def) return;
+            const src = cloud.appLogo || '';
+            if (src) {
+                img.src = src;
+                img.classList.remove('hidden');
+                def.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                def.classList.remove('hidden');
+            }
+            if (btnReset) btnReset.classList.toggle('has-logo', !!src);
+            if (btnReset) btnReset.style.visibility = src ? 'visible' : 'hidden';
+        }
+
+        function compressLogoFile(file, maxSize = 256) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => {
+                    const img = new Image();
+                    img.onload = () => {
+                        const ratio = Math.min(1, maxSize / Math.max(img.width, img.height));
+                        const w = Math.max(1, Math.round(img.width * ratio));
+                        const h = Math.max(1, Math.round(img.height * ratio));
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/png'));
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function saveAppLogoToCloud(dataUrl) {
+            cloud.appLogo = dataUrl;
+            try { localStorage.setItem('CDNK_APP_LOGO_V1', dataUrl); } catch (e) {}
+            if (!cloud.ready || !sb) return;
+            const { error } = await sb.from('cdnk_settings')
+                .upsert({ key: 'app_logo', value: { dataUrl }, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+            if (error) throw error;
+        }
+
+        async function handleAppLogoUpload(event) {
+            const file = event.target.files[0];
+            event.target.value = '';
+            if (!file) return;
+            try {
+                const dataUrl = await compressLogoFile(file);
+                cloud.appLogo = dataUrl;
+                applyAppLogo();
+                await saveAppLogoToCloud(dataUrl);
+                showToast('Đã cập nhật logo!');
+            } catch (err) {
+                console.error(err);
+                showToast('Không đổi được logo: ' + (err.message || 'ảnh không hợp lệ'), 'error');
+            }
+        }
+
+        async function resetAppLogo() {
+            if (!confirm('Xóa logo hiện tại và dùng lại biểu tượng mặc định?')) return;
+            try {
+                cloud.appLogo = '';
+                applyAppLogo();
+                try { localStorage.removeItem('CDNK_APP_LOGO_V1'); } catch (e) {}
+                await saveAppLogoToCloud('');
+                showToast('Đã khôi phục logo mặc định!', 'info');
+            } catch (err) {
+                showToast('Không lưu được thay đổi logo: ' + (err.message || err), 'error');
+            }
+        }
+
         function bootApp() {
             if (AUTO_LOGIN_EMAIL && AUTO_LOGIN_PASSWORD) {
                 const lo = document.querySelector('#cloud-status a');
                 if (lo) lo.classList.add('hidden');
             }
             loadSavedZaloQR();
+            applyAppLogo();
             updateBadgesAndStats();
             initTaoPhieuForm();
             initPatternPadEvents();
