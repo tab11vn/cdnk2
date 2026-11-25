@@ -7,6 +7,7 @@
     <!-- Tải Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Supabase JS (cơ sở dữ liệu dùng chung nhiều máy) -->
+    <!-- Cloudflare R2 Worker dùng để lưu ảnh riêng tư -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
     <!-- Tải Font Awesome cho biểu tượng -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -66,7 +67,7 @@
             font-family: 'Times New Roman', Times, serif;
             font-size: 10pt;
             line-height: 1.42;
-            padding: 6mm 7mm;
+            padding: 5mm 6mm;
             box-sizing: border-box;
             position: relative;
             display: flex;
@@ -109,7 +110,7 @@
         @media print {
             @page {
                 size: A5 portrait;
-                margin: 5mm 5mm;
+                margin: 3mm 1mm;
             }
             html, body {
                 width: 148mm;
@@ -133,7 +134,7 @@
             }
             #print-cccd-container .cccd-print-img {
                 display: block !important;
-                width: 54mm !important;
+                width: 65mm !important;
                 height: auto !important;
                 margin: 0 0 4mm 0 !important;
                 page-break-inside: avoid !important;
@@ -514,15 +515,15 @@
                                     </div>
                                     <div id="wrap-ct2">
                                         <label id="lbl-ct2" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Biển Số Xe</label>
-                                        <input type="text" id="txt-ct2" placeholder="VD: 59T2-123.45" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none bg-white uppercase">
+                                        <input type="text" id="txt-ct2" placeholder="VD: 59T2-123.45" class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none bg-white ">
                                     </div>
                                     <div id="wrap-ct3">
                                         <label id="lbl-ct3" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Số Máy</label>
-                                        <input type="text" id="txt-ct3" placeholder="Nhập số máy..." class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none bg-white uppercase">
+                                        <input type="text" id="txt-ct3" oninput="handlect3Input() placeholder="Nhập số máy..." class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none bg-white uppercase font-medium ">
                                     </div>
                                     <div id="wrap-ct4">
                                         <label id="lbl-ct4" class="block text-xs font-semibold text-slate-700 uppercase mb-1">Số Khung</label>
-                                        <input type="text" id="txt-ct4" placeholder="Nhập số khung..." class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none bg-white uppercase">
+                                        <input type="text" id="txt-ct4" placeholder="Nhập số khung..." class="w-full px-3.5 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none bg-white ">
                                     </div>
 
                                     <!-- Bàn vẽ mật khẩu 9 chấm (CHỈ hiện khi chọn mã tài sản là Điện thoại - DT) -->
@@ -771,20 +772,20 @@
                     </div>
                     <div>
                         <label class="font-semibold text-slate-600 block mb-1">Tên Tài Sản <span class="text-red-500">*</span></label>
-                        <input type="text" id="edit-tents" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none">
+                        <input type="text" id="edit-tents" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none ">
                     </div>
                     <div>
                         <label class="font-semibold text-slate-600 block mb-1">Biển Số / Mật Khẩu</label>
-                        <input type="text" id="edit-ct2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none">
+                        <input type="text" id="edit-ct2" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none uppercase font-semibold">
                     </div>
                     <div>
                         <label class="font-semibold text-slate-600 block mb-1">Số Máy / IMEI</label>
-                        <input type="text" id="edit-ct3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none">
+                        <input type="text" id="edit-ct3" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none uppercase font-semibold">
                     </div>
 
                     <div>
                         <label class="font-semibold text-slate-600 block mb-1">Số Khung / Chi Tiết 4</label>
-                        <input type="text" id="edit-ct4" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none">
+                        <input type="text" id="edit-ct4" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-gold-500 outline-none uppercase font-semibold">
                     </div>
                     <div>
                         <label class="font-semibold text-slate-600 block mb-1">Số Tiền Cầm (VNĐ) <span class="text-red-500">*</span></label>
@@ -945,18 +946,19 @@
                             </div>
                             <div style="width: 31%; display: flex; align-items: baseline;">
                                 <span style="white-space: nowrap;">Ngày Cấp:</span>
-                                <span id="prt-ngaycap" class="dotted-line" style="flex-grow: 1; margin-left: 3px; text-align: center;"></span>
+                                <span id="prt-ngaycap" class="dotted-line" style="flex-grow: 1; margin-left: 3px; text-align: center; font-weight: 700;"></span>
+                                
                             </div>
                             <div style="width: 35%; display: flex; align-items: baseline;">
                                 <span style="white-space: nowrap;">Nơi cấp:</span>
-                                <span id="prt-noicap" class="dotted-line" style="flex-grow: 1; margin-left: 3px; text-align: center; font-size: 9pt;"></span>
+                                <span id="prt-noicap" class="dotted-line" style="flex-grow: 1; margin-left: 3px; text-align: center; font-size: 9pt; font-weight: 700;"></span>
                             </div>
                         </div>
 
                         <!-- Dòng 3: Địa chỉ -->
                         <div style="display: flex; align-items: baseline; margin-top: 4px;">
                             <span style="white-space: nowrap;">Địa chỉ:</span>
-                            <span id="prt-diachi" class="dotted-line" style="flex-grow: 1; margin-left: 4px;"></span>
+                            <span id="prt-diachi" class="dotted-line" style="flex-grow: 1; margin-left: 4px; font-weight: 700;"></span>
                         </div>
                     </div>
 
@@ -1076,7 +1078,7 @@
                         <div style="width: 32%; text-align: center;">
                             <div style="font-weight: 700; font-size: 10pt;">Bên Cầm</div>
                             <div style="height: 44px;"></div>
-                            <div style="font-size: 10pt;">cầm đồ Nam Kỳ 2</div>
+                            <div style="font-size: 15pt; margin-top: 25px;">cầm đồ Nam Kỳ 2</div>
                         </div>
                     </div>
 
@@ -2422,6 +2424,56 @@
         };
         let sb = null;
 
+        // Cloudflare R2: ảnh được lưu riêng trên R2, Supabase chỉ lưu khóa đối tượng.
+        const R2_WORKER_URL = 'https://namky-storage-api.anhtuan301008.workers.dev';
+
+        async function getR2AccessToken() {
+            if (!sb) throw new Error('Supabase chưa khởi tạo.');
+            const { data, error } = await sb.auth.getSession();
+            if (error) throw error;
+            const token = data && data.session && data.session.access_token;
+            if (!token) throw new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+            return token;
+        }
+
+        async function uploadImageToR2(imageData, folder = 'images') {
+            if (!imageData) return '';
+            if (typeof imageData === 'string' && imageData.startsWith('r2://')) return imageData;
+            const token = await getR2AccessToken();
+            const blob = imageData instanceof Blob ? imageData : await (await fetch(imageData)).blob();
+            if (!blob.type || !blob.type.startsWith('image/')) throw new Error('Tệp tải lên không phải hình ảnh.');
+            const response = await fetch(`${R2_WORKER_URL}/upload?folder=${encodeURIComponent(folder)}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': blob.type },
+                body: blob
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.key) throw new Error(result.error || `Không tải được ảnh lên R2 (HTTP ${response.status}).`);
+            return `r2://${result.key}`;
+        }
+
+        async function resolveStoredImage(value) {
+            if (!value) return '';
+            if (typeof value !== 'string' || !value.startsWith('r2://')) return value;
+            const token = await getR2AccessToken();
+            const key = value.slice(5);
+            const response = await fetch(`${R2_WORKER_URL}/signed-url`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.url) throw new Error(result.error || 'Không lấy được đường dẫn ảnh từ R2.');
+            return result.url;
+        }
+
+        async function setImageElementSource(img, value) {
+            if (!img) return;
+            if (!value) { img.src = ''; return; }
+            try { img.src = await resolveStoredImage(value); }
+            catch (err) { console.error('Không tải được ảnh R2:', err); img.src = ''; }
+        }
+
         function listOf(kind) { return kind === 'contracts' ? contracts : customers; }
 
         function setSyncStatus(state) {
@@ -2482,8 +2534,8 @@
                     deletedContracts = localDel ? JSON.parse(localDel) : [];
                 } catch (e) { deletedContracts = []; }
             }
-            cloud.zaloQR = (st.zalo_qr && st.zalo_qr.dataUrl) || '';
-            cloud.appLogo = (st.app_logo && st.app_logo.dataUrl) || '';
+            cloud.zaloQR = (st.zalo_qr && (st.zalo_qr.key || st.zalo_qr.dataUrl)) || '';
+            cloud.appLogo = (st.app_logo && (st.app_logo.key || st.app_logo.dataUrl)) || '';
             normalizeCounters();
             rebuildSnapshot();
         }
@@ -2677,10 +2729,10 @@
                             scheduleRefreshUI();
                         }
                     } else if (row.key === 'zalo_qr' && row.value && row.value.dataUrl) {
-                        cloud.zaloQR = row.value.dataUrl;
+                        cloud.zaloQR = row.value.key || row.value.dataUrl || '';
                         loadSavedZaloQR();
                     } else if (row.key === 'app_logo' && row.value) {
-                        cloud.appLogo = row.value.dataUrl || '';
+                        cloud.appLogo = row.value.key || row.value.dataUrl || '';
                         applyAppLogo();
                     }
                     return;
@@ -2886,10 +2938,13 @@
         }
 
         async function saveZaloQRToCloud(dataUrl) {
-            cloud.zaloQR = dataUrl;
+            const stored = dataUrl ? await uploadImageToR2(dataUrl, 'qr') : '';
+            cloud.zaloQR = stored;
+            const value = stored ? (stored.startsWith('r2://') ? { key: stored } : { dataUrl: stored }) : {};
             const { error } = await sb.from('cdnk_settings')
-                .upsert({ key: 'zalo_qr', value: { dataUrl }, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+                .upsert({ key: 'zalo_qr', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
             if (error) throw error;
+            await loadSavedZaloQR();
         }
 
         // ---- Logo thương hiệu trên thanh menu (có thể đổi ảnh, lưu dùng chung các máy) ----
@@ -2900,9 +2955,9 @@
             if (!img || !def) return;
             const src = cloud.appLogo || '';
             if (src) {
-                img.src = src;
                 img.classList.remove('hidden');
                 def.classList.add('hidden');
+                setImageElementSource(img, src);
             } else {
                 img.src = '';
                 img.classList.add('hidden');
@@ -2935,11 +2990,13 @@
         }
 
         async function saveAppLogoToCloud(dataUrl) {
-            cloud.appLogo = dataUrl;
-            try { localStorage.setItem('CDNK_APP_LOGO_V1', dataUrl); } catch (e) {}
+            const stored = dataUrl ? await uploadImageToR2(dataUrl, 'logo') : '';
+            cloud.appLogo = stored;
+            try { if (stored) localStorage.setItem('CDNK_APP_LOGO_V1', stored); else localStorage.removeItem('CDNK_APP_LOGO_V1'); } catch (e) {}
             if (!cloud.ready || !sb) return;
+            const value = stored ? (stored.startsWith('r2://') ? { key: stored } : { dataUrl: stored }) : {};
             const { error } = await sb.from('cdnk_settings')
-                .upsert({ key: 'app_logo', value: { dataUrl }, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+                .upsert({ key: 'app_logo', value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
             if (error) throw error;
         }
 
@@ -2952,7 +3009,8 @@
                 cloud.appLogo = dataUrl;
                 applyAppLogo();
                 await saveAppLogoToCloud(dataUrl);
-                showToast('Đã cập nhật logo!');
+                applyAppLogo();
+                showToast('Đã cập nhật logo lên R2!');
             } catch (err) {
                 console.error(err);
                 showToast('Không đổi được logo: ' + (err.message || 'ảnh không hợp lệ'), 'error');
@@ -3222,7 +3280,7 @@
 
             if (kh.imgFront) {
                 currentCCCDImages.front = kh.imgFront;
-                document.getElementById('preview-cccd-front').src = kh.imgFront;
+                setImageElementSource(document.getElementById('preview-cccd-front'), kh.imgFront);
                 document.getElementById('preview-cccd-front').classList.remove('hidden');
                 document.getElementById('placeholder-cccd-front').classList.add('hidden');
                 document.getElementById('clear-front-btn').classList.remove('hidden');
@@ -3232,7 +3290,7 @@
 
             if (kh.imgBack) {
                 currentCCCDImages.back = kh.imgBack;
-                document.getElementById('preview-cccd-back').src = kh.imgBack;
+                setImageElementSource(document.getElementById('preview-cccd-back'), kh.imgBack);
                 document.getElementById('preview-cccd-back').classList.remove('hidden');
                 document.getElementById('placeholder-cccd-back').classList.add('hidden');
                 document.getElementById('clear-back-btn').classList.remove('hidden');
@@ -3290,17 +3348,30 @@
             input.value = v;
         }
 
-        function handleImageUpload(event, side) {
+        async function handleImageUpload(event, side) {
             const file = event.target.files[0];
+            event.target.value = '';
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
-                currentCCCDImages[side] = e.target.result;
-                document.getElementById(`preview-cccd-${side}`).src = e.target.result;
-                document.getElementById(`preview-cccd-${side}`).classList.remove('hidden');
+            reader.onload = async function(e) {
+                const dataUrl = e.target.result;
+                currentCCCDImages[side] = dataUrl;
+                const preview = document.getElementById(`preview-cccd-${side}`);
+                preview.src = dataUrl;
+                preview.classList.remove('hidden');
                 document.getElementById(`placeholder-cccd-${side}`).classList.add('hidden');
                 document.getElementById(`clear-${side}-btn`).classList.remove('hidden');
+                try {
+                    currentCCCDImages[side] = await uploadImageToR2(dataUrl, 'cccd');
+                    await setImageElementSource(preview, currentCCCDImages[side]);
+                    showToast(`Đã tải ảnh CCCD ${side === 'front' ? 'mặt trước' : 'mặt sau'} lên R2.`);
+                } catch (err) {
+                    console.error(err);
+                    showToast('Không tải được ảnh CCCD lên R2: ' + (err.message || err), 'error');
+                    // Giữ ảnh tạm để người dùng vẫn thao tác được; lần lưu tiếp theo sẽ báo lỗi nếu cần.
+                }
             };
+            reader.onerror = () => showToast('Không đọc được tệp ảnh CCCD.', 'error');
             reader.readAsDataURL(file);
         }
 
@@ -4680,7 +4751,7 @@
             const frontImg = document.getElementById('modal-cccd-front-img');
             const frontEmpty = document.getElementById('modal-cccd-front-empty');
             if (kh.imgFront) {
-                frontImg.src = kh.imgFront;
+                setImageElementSource(frontImg, kh.imgFront);
                 frontImg.classList.remove('hidden');
                 frontEmpty.classList.add('hidden');
             } else {
@@ -4692,7 +4763,7 @@
             const backImg = document.getElementById('modal-cccd-back-img');
             const backEmpty = document.getElementById('modal-cccd-back-empty');
             if (kh.imgBack) {
-                backImg.src = kh.imgBack;
+                setImageElementSource(backImg, kh.imgBack);
                 backImg.classList.remove('hidden');
                 backEmpty.classList.add('hidden');
             } else {
@@ -4802,11 +4873,11 @@
 
                     try {
                         if (frontFile) {
-                            customer.imgFront = await compressCCCDImageFile(frontFile);
+                            customer.imgFront = await uploadImageToR2(await compressCCCDImageFile(frontFile), 'cccd');
                             updatedCount++;
                         }
                         if (backFile) {
-                            customer.imgBack = await compressCCCDImageFile(backFile);
+                            customer.imgBack = await uploadImageToR2(await compressCCCDImageFile(backFile), 'cccd');
                             updatedCount++;
                         }
                     } catch (err) {
@@ -4818,7 +4889,7 @@
                     const isExplicitBack = /(mat[_\s-]*sau|matsau|\bsau\b|\bback\b|\bms\b|[_-]2$)/i.test(bName);
 
                     try {
-                        const compressed = await compressCCCDImageFile(singleFile);
+                        const compressed = await uploadImageToR2(await compressCCCDImageFile(singleFile), 'cccd');
                         if (isExplicitBack || (customer.imgFront && !customer.imgBack)) {
                             customer.imgBack = compressed;
                         } else {
@@ -5737,7 +5808,7 @@
         }
 
         async function printCCCDImages() {
-            const sources = [currentCCCDImages.front, currentCCCDImages.back].filter(Boolean);
+            const sources = (await Promise.all([currentCCCDImages.front, currentCCCDImages.back].map(resolveStoredImage))).filter(Boolean);
             if (sources.length === 0) {
                 showToast('Chưa có ảnh CCCD để in! Hãy tải ảnh mặt trước / mặt sau lên.', 'warning');
                 return;
@@ -5897,26 +5968,28 @@
 
         function handleZaloQRUpload(event) {
             const file = event.target.files[0];
+            event.target.value = '';
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 const imgEl = document.getElementById('prt-zalo-qr-img');
-                if (imgEl) {
-                    imgEl.src = e.target.result;
+                if (imgEl) imgEl.src = e.target.result;
+                try {
+                    await saveZaloQRToCloud(e.target.result);
+                    showToast('Đã cập nhật ảnh mã QR Zalo lên R2!');
+                } catch (err) {
+                    console.error(err);
+                    showToast('Không lưu được ảnh QR lên R2: ' + (err.message || err), 'error');
                 }
-                saveZaloQRToCloud(e.target.result)
-                    .then(() => showToast('Đã cập nhật ảnh mã QR Zalo cho mẫu in!'))
-                    .catch(err => showToast('Không lưu được ảnh QR lên máy chủ: ' + (err.message || err), 'error'));
             };
             reader.readAsDataURL(file);
         }
 
-        function loadSavedZaloQR() {
+        async function loadSavedZaloQR() {
             const savedQR = cloud.zaloQR;
             const imgEl = document.getElementById('prt-zalo-qr-img');
-            if (savedQR && imgEl) {
-                imgEl.src = savedQR;
-            }
+            if (savedQR && imgEl) await setImageElementSource(imgEl, savedQR);
+            else if (imgEl) imgEl.src = '';
         }
 
         // =========================================================================
